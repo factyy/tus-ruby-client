@@ -42,7 +42,7 @@ module Tus
 
     def create_remote(file_name, file_size)
       unless @capabilities.include?('creation')
-        raise 'New file uploading not supported!'
+        raise 'New file uploading is not supported!'
       end
 
       request = Net::HTTP::Post.new(@server_uri.request_uri)
