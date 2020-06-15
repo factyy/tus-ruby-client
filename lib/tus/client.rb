@@ -53,7 +53,11 @@ module Tus
 
       response = @http.request(request)
 
-      p response
+      unless response.is_a?(Net::HTTPCreated)
+        raise 'Cannot create a remote file!'
+      end
+
+      response['Location']
     end
 
     def file_offset(file_uri); end
