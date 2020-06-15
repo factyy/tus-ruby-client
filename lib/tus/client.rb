@@ -29,6 +29,16 @@ module Tus
       # we use only parameters that are known to the server
       offset, length = file_upload_parameters(uri)
 
+      chunks = Enumerator.new do |yielder|
+        yielder << io.read(CHUNK_SIZE)
+      end
+
+      offset = chunks.lazy.inject(offset) do |current_offset, chunk|
+        upload_chunk(uri, current_offset, chunk)
+      end
+
+      raise 'Broken upload!' unless offset == length
+
       io.close
     end
 
@@ -71,6 +81,23 @@ module Tus
       [response['Upload-Offset'], response['Upload-Length']].map(&:to_i)
     end
 
-    def upload_chunk(file_uri, io); end
+    def upload_chunk(file_uri, offset, chunk)
+      request = Net::HTTP::Patch.new(file_uri)
+      request['Content-Type'] = 'application/offset+octet-stream'
+      request['Upload-Offset'] = offset
+      request['Tus-Resumable'] = TUS_VERSION
+      request.body = chunk
+
+      response = @http.request(request)
+
+      resulting_offset = response['Upload-Offset'].to_i
+      unless resulting_offset == offset + chunk.size
+        raise 'Chunk upload is broken!'
+      end
+
+      raise 'Chunk upload is broken!' unless response.is_a?(Net::HTTPNoContent)
+
+      resulting_offset
+    end
   end
 end
