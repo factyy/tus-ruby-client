@@ -26,6 +26,8 @@ module Tus
       io = File.open(file_path, 'rb')
 
       uri = create_remote(File.basename(file_path), File.size(file_path))
+      # we use only parameters that are known to the server
+      offset, length = file_upload_parameters(uri)
 
       io.close
     end
@@ -60,7 +62,14 @@ module Tus
       response['Location']
     end
 
-    def file_offset(file_uri); end
+    def file_upload_parameters(file_uri)
+      request = Net::HTTP::Head.new(file_uri)
+      request['Tus-Resumable'] = TUS_VERSION
+
+      response = @http.request(request)
+
+      [response['Upload-Offset'], response['Upload-Length']].map(&:to_i)
+    end
 
     def upload_chunk(file_uri, io); end
   end
