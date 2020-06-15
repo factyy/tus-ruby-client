@@ -6,21 +6,9 @@ TODO: Write the additional info
 
 ## Installation
 
-Add this line to your application's Gemfile:
+TODO: this gem is not published yet!
 
-```ruby
-gem 'tus-client'
-```
-
-And then execute:
-
-    $ bundle install
-
-Or install it yourself as:
-
-    $ gem install tus-client
-    
-Note: this gem is not published yet!
+Just install it from sources
 
 ## Usage
 
