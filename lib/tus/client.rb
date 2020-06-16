@@ -27,14 +27,18 @@ module Tus
 
       uri = create_remote(File.basename(file_path), File.size(file_path))
       # we use only parameters that are known to the server
-      offset, length = file_upload_parameters(uri)
+      offset, length = upload_parameters(uri)
 
       chunks = Enumerator.new do |yielder|
         yielder << io.read(CHUNK_SIZE)
       end
 
-      offset = chunks.lazy.inject(offset) do |current_offset, chunk|
-        upload_chunk(uri, current_offset, chunk)
+      begin
+        offset = chunks.lazy.inject(offset) do |current_offset, chunk|
+          upload_chunk(uri, current_offset, chunk)
+        end
+      rescue StandardError
+        raise 'Broken upload! Cannot send a chunk!'
       end
 
       raise 'Broken upload!' unless offset == length
@@ -72,8 +76,8 @@ module Tus
       response['Location']
     end
 
-    def file_upload_parameters(file_uri)
-      request = Net::HTTP::Head.new(file_uri)
+    def upload_parameters(uri)
+      request = Net::HTTP::Head.new(uri)
       request['Tus-Resumable'] = TUS_VERSION
 
       response = @http.request(request)
@@ -81,8 +85,8 @@ module Tus
       [response['Upload-Offset'], response['Upload-Length']].map(&:to_i)
     end
 
-    def upload_chunk(file_uri, offset, chunk)
-      request = Net::HTTP::Patch.new(file_uri)
+    def upload_chunk(uri, offset, chunk)
+      request = Net::HTTP::Patch.new(uri)
       request['Content-Type'] = 'application/offset+octet-stream'
       request['Upload-Offset'] = offset
       request['Tus-Resumable'] = TUS_VERSION
