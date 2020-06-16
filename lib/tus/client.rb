@@ -10,6 +10,7 @@ module Tus
     # 100 MiB is ok for now...
     CHUNK_SIZE = 100 * 1024 * 1024
     TUS_VERSION = '1.0.0'
+    NUM_RETRIES = 5
 
     def initialize(server_url)
       @server_uri = URI.parse(server_url)
@@ -67,7 +68,16 @@ module Tus
       request['Tus-Resumable'] = TUS_VERSION
       request['Upload-Metadata'] = "filename: #{Base64.strict_encode64(file_name)},is_confidential"
 
-      response = @http.request(request)
+      response = nil
+
+      NUM_RETRIES.times do
+        begin
+          response = @http.request(request)
+          break
+        rescue StandardError
+          next
+        end
+      end
 
       unless response.is_a?(Net::HTTPCreated)
         raise 'Cannot create a remote file!'
@@ -92,14 +102,23 @@ module Tus
       request['Tus-Resumable'] = TUS_VERSION
       request.body = chunk
 
-      response = @http.request(request)
+      response = nil
+
+      NUM_RETRIES.times do
+        begin
+          response = @http.request(request)
+          break
+        rescue StandardError
+          next
+        end
+      end
+
+      raise 'Cannot upload a chunk!' unless response.is_a?(Net::HTTPNoContent)
 
       resulting_offset = response['Upload-Offset'].to_i
       unless resulting_offset == offset + chunk.size
         raise 'Chunk upload is broken!'
       end
-
-      raise 'Chunk upload is broken!' unless response.is_a?(Net::HTTPNoContent)
 
       resulting_offset
     end
