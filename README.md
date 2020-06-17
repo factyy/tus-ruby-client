@@ -6,9 +6,15 @@ TODO: Write the additional info
 
 ## Installation
 
-TODO: this gem is not published yet!
+From the command line:
+```bash
+gem install tus-client
+```
 
-Just install it from sources
+Or place this line to your `Gemfile`:
+```rb
+gem "tus-client"
+```
 
 ## Usage
 
