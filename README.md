@@ -11,7 +11,7 @@ From the command line:
 gem install tus-client
 ```
 
-Or place this line to your `Gemfile`:
+Or add this line to your `Gemfile`:
 ```rb
 gem "tus-client"
 ```
