@@ -22,7 +22,7 @@ TODO: Write usage instructions here
 
 ## Development
 
-TODO: Write the info
+Just clone the repo and open a pull request when done implementing your feature
 
 ## Contributing
 
