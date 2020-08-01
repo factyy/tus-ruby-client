@@ -3,7 +3,7 @@
 require 'net/http'
 require 'base64'
 
-require 'tus/client/version'
+require_relative 'client/version'
 
 module Tus
   class Client
@@ -24,14 +24,28 @@ module Tus
     def upload(file_path)
       raise 'No such file!' unless File.file?(file_path)
 
+      file_name = File.basename(file_path)
+      file_size = File.size(file_path)
       io = File.open(file_path, 'rb')
 
-      uri = create_remote(File.basename(file_path), File.size(file_path))
+      upload_by_io(file_name: file_name, file_size: file_size, io: io)
+    end
+
+    def upload_by_io(file_name:, file_size:, io:)
+      raise 'Cannot upload a stream of unknown size!' unless file_size
+
+      uri = create_remote(file_name, file_size)
       # we use only parameters that are known to the server
       offset, length = upload_parameters(uri)
 
       chunks = Enumerator.new do |yielder|
-        yielder << io.read(CHUNK_SIZE)
+        loop do
+          chunk = io.read(CHUNK_SIZE)
+
+          break unless chunk
+
+          yielder << chunk
+        end
       end
 
       begin
