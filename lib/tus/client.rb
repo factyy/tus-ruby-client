@@ -97,7 +97,11 @@ module Tus
         raise 'Cannot create a remote file!'
       end
 
-      response['Location']
+      location_url = response['Location']
+
+      raise 'Malformed server response: missing \'Location\' header' unless location_url
+
+      URI.parse(location_url).path
     end
 
     def upload_parameters(uri)
