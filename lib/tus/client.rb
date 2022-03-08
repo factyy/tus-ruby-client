@@ -28,7 +28,7 @@ module Tus
       file_size = File.size(file_path)
       io = File.open(file_path, 'rb')
 
-      upload_by_io(file_name: file_name, file_size: file_size, io: io, , metadata: metadata)
+      upload_by_io(file_name: file_name, file_size: file_size, io: io, metadata: metadata)
     end
 
     def upload_by_io(file_name:, file_size:, io:, metadata:)
