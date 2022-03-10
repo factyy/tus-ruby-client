@@ -21,20 +21,20 @@ module Tus
       @capabilities = capabilities
     end
 
-    def upload(file_path)
+    def upload(file_path, metadata = nil)
       raise 'No such file!' unless File.file?(file_path)
 
       file_name = File.basename(file_path)
       file_size = File.size(file_path)
       io = File.open(file_path, 'rb')
 
-      upload_by_io(file_name: file_name, file_size: file_size, io: io)
+      upload_by_io(file_name: file_name, file_size: file_size, io: io, metadata: metadata)
     end
 
-    def upload_by_io(file_name:, file_size:, io:)
+    def upload_by_io(file_name:, file_size:, io:, metadata:)
       raise 'Cannot upload a stream of unknown size!' unless file_size
 
-      uri = create_remote(file_name, file_size)
+      uri = create_remote(file_name, file_size, metadata)
       # we use only parameters that are known to the server
       offset, length = upload_parameters(uri)
 
@@ -71,16 +71,20 @@ module Tus
       response['Tus-Extension']&.split(',')
     end
 
-    def create_remote(file_name, file_size)
+    def create_remote(file_name, file_size, metadata)
       unless @capabilities.include?('creation')
         raise 'New file uploading is not supported!'
       end
+
+      metadata ||= {}
+      metadata[:filename] = file_name
+      metadata_pairs = metadata.map { |key, value| "#{key} #{Base64.strict_encode64(value)}" }
 
       request = Net::HTTP::Post.new(@server_uri.request_uri)
       request['Content-Length'] = 0
       request['Upload-Length'] = file_size
       request['Tus-Resumable'] = TUS_VERSION
-      request['Upload-Metadata'] = "filename: #{Base64.strict_encode64(file_name)},is_confidential"
+      request['Upload-Metadata'] = metadata_pairs.join(',')
 
       response = nil
 
