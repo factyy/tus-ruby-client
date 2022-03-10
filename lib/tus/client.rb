@@ -75,23 +75,16 @@ module Tus
       unless @capabilities.include?('creation')
         raise 'New file uploading is not supported!'
       end
-      
-      if metadata.nil? then
-        metadata = {}
-      end
 
+      metadata ||= {}
       metadata[:filename] = file_name
-
-      pairs = []
-      metadata.each do |key, value|
-        pairs << "#{key} #{Base64.strict_encode64(value)}"
-      end
+      metadata_pairs = metadata.map { |key, value| "#{key} #{Base64.strict_encode64(value)}" }
 
       request = Net::HTTP::Post.new(@server_uri.request_uri)
       request['Content-Length'] = 0
       request['Upload-Length'] = file_size
       request['Tus-Resumable'] = TUS_VERSION
-      request['Upload-Metadata'] = pairs.join(',')
+      request['Upload-Metadata'] = metadata_pairs.join(',')
 
       response = nil
 
